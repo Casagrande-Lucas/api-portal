@@ -1,0 +1,53 @@
+version: "3.7"
+services:
+  app:
+    build:
+      args:
+        user: portal
+        uid: 1000
+      context: ./
+      dockerfile: docker-compose/Dockerfile
+    image: portal
+    container_name: portal-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - portal
+    depends_on:
+      - db
+      - redis
+    ports:
+      - 9501:9501
+
+  db:
+    image: mysql:8.0
+    container_name: portal-database
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    ports:
+      - "127.0.0.1:3310:3306"
+    volumes:
+      - data_db_portal:/var/lib/mysql
+      - ./docker-compose/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - portal
+
+  redis:
+    image: redis
+    networks:
+      - portal
+
+volumes:
+  data_db_portal:
+
+networks:
+  portal:
+    driver: bridge
